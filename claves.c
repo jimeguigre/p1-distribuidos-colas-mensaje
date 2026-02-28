@@ -7,10 +7,10 @@
 #define MAX_HASH 1031 // Número primo para reducir colisiones
 
 typedef struct Nodo {
-    char key[256];              // Clave: máx 255 caracteres + '\0' [cite: 8, 36]
-    char value1[256];           // Valor 1: máx 255 caracteres + '\0' [cite: 10, 36]
-    int N_value2;               // Dimensión del vector (entre 1 y 32) [cite: 12, 13]
-    float V_value2[32];         // Vector de floats: máx 32 elementos [cite: 11, 36]
+    char key[256];              // Clave: máx 255 caracteres + '\0'
+    char value1[256];           // Valor 1: máx 255 caracteres + '\0'
+    int N_value2;               // Dimensión del vector (entre 1 y 32)
+    float V_value2[32];         // Vector de floats: máx 32 elementos 
     struct Paquete value3;      // Estructura con enteros x, y, z 
     struct Nodo *siguiente;     // Puntero al siguiente nodo (gestión de colisiones) 
 } Nodo;
@@ -19,7 +19,7 @@ typedef struct Nodo {
 // La tabla hash global
 static Nodo *tabla[MAX_HASH]; 
 
-// Función hash simple (djb2)
+// Función hash simple utilizando el algoritmo djb2 de Dan Bernstein
 unsigned int funcion_hash(char *str) {
     unsigned long hash = 5381;
     int c;
@@ -30,35 +30,155 @@ unsigned int funcion_hash(char *str) {
 
 
 
-// código para set_value: 
+// función set_value: 
 int set_value(char *key, char *value1, int N_value2, float *V_value2, struct Paquete value3) {
-    // 1. Validar N_value2 [cite: 31]
+    // validar N_value2
     if (N_value2 < 1 || N_value2 > 32) return -1;
 
-    // 2. Calcular índice hash
+    // calcular índice hash
     unsigned int idx = funcion_hash(key);
 
-    // 3. Comprobar si la clave ya existe [cite: 31]
+    // comprobar si la clave ya existe
     Nodo *actual = tabla[idx];
     while (actual != NULL) {
         if (strcmp(actual->key, key) == 0) return -1;
         actual = actual->siguiente;
     }
 
-    // 4. Crear nuevo nodo (Sin límite de elementos [cite: 77, 144])
+    // crear nuevo nodo 
     Nodo *nuevo = (Nodo *)malloc(sizeof(Nodo));
     if (nuevo == NULL) return -1;
 
-    // 5. Copiar datos
+    // copiar datos
     strncpy(nuevo->key, key, 255);
     strncpy(nuevo->value1, value1, 255);
     nuevo->N_value2 = N_value2;
     memcpy(nuevo->V_value2, V_value2, N_value2 * sizeof(float));
     nuevo->value3 = value3;
 
-    // 6. Insertar al principio de la lista del índice idx
+    // insertar al principio de la lista del índice idx
     nuevo->siguiente = tabla[idx];
     tabla[idx] = nuevo;
 
-    return 0; // Éxito [cite: 30]
+    return 0; // Éxito
+}
+
+
+
+// función get_value: 
+int get_value(char *key, char *value1, int *N_value2, float *V_value2, struct Paquete *value3) {
+    // calcular índice hash
+    unsigned int idx = funcion_hash(key);
+
+    // buscar la clave en la lista enlazada
+    Nodo *actual = tabla[idx];
+    while (actual != NULL) {
+        if (strcmp(actual->key, key) == 0) {            
+            // Copiamos la cadena
+            strncpy(value1, actual->value1, 255);
+            value1[255] = '\0'; // Aseguramos el fin de cadena
+
+            // Devolvemos la dimensión y el vector 
+            *N_value2 = actual->N_value2;
+            memcpy(V_value2, actual->V_value2, actual->N_value2 * sizeof(float));
+
+            // Devolvemos la estructura Paquete 
+            *value3 = actual->value3;
+
+            return 0; // Éxito 
+        }
+        actual = actual->siguiente;
+    }
+
+    // si llegamos aquí, la clave no existe 
+    return -1; 
+}
+
+
+// función modify_value:
+int modify_value(char *key, char *value1, int N_value2, float *V_value2, struct Paquete value3) {
+    // validar N_value2
+    if (N_value2 < 1 || N_value2 > 32) return -1;
+
+    // calcular índice hash
+    unsigned int idx = funcion_hash(key);
+
+    // buscar la clave en la lista enlazada
+    Nodo *actual = tabla[idx];
+    while (actual != NULL) {
+        if (strcmp(actual->key, key) == 0) {
+            // actualizar los valores
+            strncpy(actual->value1, value1, 255);
+            actual->value1[255] = '\0'; // Aseguramos el fin de cadena
+
+            actual->N_value2 = N_value2;
+            memcpy(actual->V_value2, V_value2, N_value2 * sizeof(float));
+            actual->value3 = value3;
+
+            return 0; // Éxito
+        }
+        actual = actual->siguiente;
+    }
+
+    // si llegamos aquí, la clave no existe
+    return -1;
+}
+
+// función delete_key:
+int delete_key(char *key) {
+    // calcular índice hash
+    unsigned int idx = funcion_hash(key);
+
+    // buscar la clave en la lista enlazada
+    Nodo *actual = tabla[idx];
+    Nodo *anterior = NULL;
+    while (actual != NULL) {
+        if (strcmp(actual->key, key) == 0) {
+            // eliminar el nodo
+            if (anterior == NULL) {
+                // el nodo a eliminar es el primero
+                tabla[idx] = actual->siguiente;
+            } else {
+                anterior->siguiente = actual->siguiente;
+            }
+            free(actual);
+            return 0; // Éxito
+        }
+        anterior = actual;
+        actual = actual->siguiente;
+    }
+
+    // si llegamos aquí, la clave no existe
+    return -1;
+}
+
+// función exist:
+int exist(char *key) {
+    // calcular índice hash
+    unsigned int idx = funcion_hash(key);
+
+    // buscar la clave en la lista enlazada
+    Nodo *actual = tabla[idx];
+    while (actual != NULL) {
+        if (strcmp(actual->key, key) == 0) {
+            return 1; // La clave existe
+        }
+        actual = actual->siguiente;
+    }
+
+    // si llegamos aquí, la clave no existe
+    return 0;
+}
+
+// función destroy: 
+int destroy(void) {
+    for (int i = 0; i < MAX_HASH; i++) {
+        Nodo *actual = tabla[i];
+        while (actual != NULL) {
+            Nodo *temp = actual;
+            actual = actual->siguiente;
+            free(temp);
+        }
+        tabla[i] = NULL; // Limpiar el puntero de la tabla
+    }
 }
