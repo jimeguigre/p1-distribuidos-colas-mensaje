@@ -1,0 +1,16 @@
+jimena@jimena-Aspire-A315-59:~/Escritorio/distribuidos/practica1/p1-codigo/p1-distribuidos-colas-mensaje$ make
+gcc -Wall -Werror -fPIC -c claves.c
+gcc -shared -o libclaves.so claves.o 
+gcc -Wall -Werror -fPIC -c app-cliente.c
+gcc -o app-cliente app-cliente.o -L. -lclaves 
+jimena@jimena-Aspire-A315-59:~/Escritorio/distribuidos/practica1/p1-codigo/p1-distribuidos-colas-mensaje$ make run
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH; ./app-cliente
+--- INICIANDO PLAN DE PRUEBAS ---
+Servicio inicializado/destruido con éxito.
+Inserción de 'clave_prueba' correcta.
+La clave 'clave_prueba' existe en el sistema.
+Datos recuperados: v1='valor inicial 1', n2=3, v3={10,20,30}
+Modificación de 'clave_prueba' correcta.
+Borrado de 'clave_prueba' correcto.
+Confirmado: la clave 'clave_prueba' ya no existe.
+--- PRUEBAS FINALIZADAS ---

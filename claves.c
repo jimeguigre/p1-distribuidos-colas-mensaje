@@ -181,4 +181,5 @@ int destroy(void) {
         }
         tabla[i] = NULL; // Limpiar el puntero de la tabla
     }
+    return 0; 
 }
