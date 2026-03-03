@@ -1,1 +1,96 @@
-MUTEXXX en main de servidor_mq.c
+1. 
+MUTEXXX SIN SIGNAL en claves.c 
+// Al inicio de set_value, get_value, modify_value, etc.
+pthread_mutex_lock(&cerrojo);
+
+// ... lógica de la función ...
+
+// Al final, justo antes de cada 'return'
+pthread_mutex_unlock(&cerrojo); 
+
+
+2. 
+Implementar un pool del hilos en vez de crear un hilo por petición ???
+(es más complejo pero dejo el profe que tenía en cuenta la dificultad de las implementaciones)
+
+con pool de hilos es necesario que el mutex tenga signal (el mutex iría en el main de servidor_mq.c en vez de en claves.c )
+
+
+
+
+
+
+HACEMOS POOL DE HILOS?? 
+
+(EJEMPLO DE POOL DE HILOS EN SERVIDOR_MQ.C)
+#include <pthread.h>
+#include <mqueue.h>
+// ... otros includes ...
+
+#define NUM_HILOS 10
+#define MAX_TAREAS 100
+
+// Elementos para el Pool
+struct mensaje_peticion cola_tareas[MAX_TAREAS];
+int num_tareas = 0;
+int leer_pos = 0;
+int escribir_pos = 0;
+
+pthread_mutex_t m_cola = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t c_cola = PTHREAD_COND_INITIALIZER;
+
+// Función que ejecutan los hilos del pool
+void *trabajador(void *arg) {
+    while (1) {
+        struct mensaje_peticion peticion;
+
+        pthread_mutex_lock(&m_cola);
+        // Si no hay tareas, el hilo se duerme aquí
+        while (num_tareas == 0) {
+            pthread_cond_wait(&c_cola, &m_cola);
+        }
+
+        // Sacar tarea de la cola interna
+        peticion = cola_tareas[leer_pos];
+        leer_pos = (leer_pos + 1) % MAX_TAREAS;
+        num_tareas--;
+
+        pthread_mutex_unlock(&m_cola);
+
+        // Ejecutar la lógica (esta función llama a claves.c)
+        tratar_peticion(&peticion); 
+    }
+    return NULL;
+}
+
+int main() {
+    mqd_t q_servidor;
+    struct mq_attr attr = { .mq_maxmsg = 10, .mq_msgsize = sizeof(struct mensaje_peticion) };
+
+    // 1. Crear el Pool de Hilos al arrancar
+    pthread_t hilos[NUM_HILOS];
+    for (int i = 0; i < NUM_HILOS; i++) {
+        pthread_create(&hilos[i], NULL, trabajador, NULL);
+    }
+
+    mq_unlink("/SERVIDOR");
+    q_servidor = mq_open("/SERVIDOR", O_CREAT | O_RDONLY, 0666, &attr);
+
+    // 2. Bucle principal: solo recibe y reparte
+    while (1) {
+        struct mensaje_peticion temporal;
+        mq_receive(q_servidor, (char *)&temporal, sizeof(struct mensaje_peticion), NULL);
+
+        pthread_mutex_lock(&m_cola);
+        if (num_tareas < MAX_TAREAS) {
+            cola_tareas[escribir_pos] = temporal;
+            escribir_pos = (escribir_pos + 1) % MAX_TAREAS;
+            num_tareas++;
+            
+            // DESPIERTA a un hilo trabajador que esté en cond_wait
+            pthread_cond_signal(&c_cola); 
+        }
+        pthread_mutex_unlock(&m_cola);
+    }
+    return 0;
+}
