@@ -1,3 +1,8 @@
+#ifndef PETICION_H
+#define PETICION_H
+
+#include "claves.h"
+
 struct mensaje_peticion {
     int operacion;          // 0 para set, 1 para get, 2 para modify, 3 para delete, 4 para exist, 5 para destroy
     char q_cliente[256];    // Nombre de la cola donde el cliente espera respuesta
@@ -15,3 +20,5 @@ struct mensaje_respuesta {
     float V_value2[32];
     struct Paquete value3;
 };
+
+#endif 

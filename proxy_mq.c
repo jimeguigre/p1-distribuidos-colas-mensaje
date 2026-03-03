@@ -63,21 +63,30 @@ int get_value(char *key, char *value1, int *N_value2, float *V_value2, struct Pa
 
     // preparar la petición
     pet.operacion = 1; // Código para GET
-    strcpy(pet.q_cliente, nombre_cola);
+    strncpy(pet.q_cliente, nombre_cola, 255);
     strncpy(pet.key, key, 255);
-    strncpy(pet.value1, value1, 255);
-    pet.N_value2 = *N_value2;
-    memcpy(pet.V_value2, V_value2, *N_value2 * sizeof(float));
-    pet.value3 = *value3;
 
     // enviar al servidor
     q_servidor = mq_open("/SERVIDOR", O_WRONLY);
-    if (q_servidor == -1) return -2; // Error de comunicaciones
+    if (q_servidor == -1){
+        mq_close(q_cliente);
+        mq_unlink(nombre_cola);
+        return -2; // Error de comunicaciones
+    }
 
     mq_send(q_servidor, (const char *)&pet, sizeof(pet), 0);
 
     // recibir respuesta (bloqueante)
     mq_receive(q_cliente, (char *)&res, sizeof(res), NULL);
+
+
+    if (res.resultado == 0) {
+        // Copiamos lo que envió el servidor a los punteros que nos dio el cliente
+        strcpy(value1, res.value1);
+        *N_value2 = res.N_value2;
+        memcpy(V_value2, res.V_value2, res.N_value2 * sizeof(float));
+        *value3 = res.value3;
+    }
 
     // limpieza
     mq_close(q_servidor);

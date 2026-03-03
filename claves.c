@@ -51,7 +51,9 @@ int set_value(char *key, char *value1, int N_value2, float *V_value2, struct Paq
 
     // copiar datos
     strncpy(nuevo->key, key, 255);
+    nuevo->key[255] = '\0';
     strncpy(nuevo->value1, value1, 255);
+    nuevo->value1[255] = '\0';
     nuevo->N_value2 = N_value2;
     memcpy(nuevo->V_value2, V_value2, N_value2 * sizeof(float));
     nuevo->value3 = value3;
