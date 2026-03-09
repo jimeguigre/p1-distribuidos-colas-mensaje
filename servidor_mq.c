@@ -41,8 +41,12 @@ void tratar_peticion(void *data) {
 
     // se abre la cola del cliente y el servidor envía la respuesta
     q_cli = mq_open(pet->q_cliente, O_WRONLY);
-    mq_send(q_cli, (const char *)&res, sizeof(res), 0);
-    mq_close(q_cli);
+    if (q_cli != -1) {
+        mq_send(q_cli, (const char *)&res, sizeof(res), 0);
+        mq_close(q_cli);
+    } else{
+        perror("Error al abrir la cola del cliente");
+    }
     
     free(pet);
     pthread_exit(NULL);

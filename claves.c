@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "claves.h"
+#include <pthread.h>
 
 
 #define MAX_HASH 1031 // Número primo para reducir colisiones
@@ -28,6 +29,8 @@ unsigned int funcion_hash(char *str) {
     return hash % MAX_HASH;
 }
 
+// declaración del mutex para proteger el acceso a la tabla hash
+pthread_mutex_t cerrojo = PTHREAD_MUTEX_INITIALIZER;
 
 
 // función set_value: 
@@ -35,20 +38,27 @@ int set_value(char *key, char *value1, int N_value2, float *V_value2, struct Paq
     // validar N_value2
     if (N_value2 < 1 || N_value2 > 32) return -1;
 
+    pthread_mutex_lock(&cerrojo);
     // calcular índice hash
     unsigned int idx = funcion_hash(key);
 
     // comprobar si la clave ya existe
     Nodo *actual = tabla[idx];
     while (actual != NULL) {
-        if (strcmp(actual->key, key) == 0) return -1;
+        if (strcmp(actual->key, key) == 0){
+            pthread_mutex_unlock(&cerrojo); // Liberar el cerrojo antes de retornar
+            return -1;
+        }
         actual = actual->siguiente;
     }
 
     // crear nuevo nodo 
     Nodo *nuevo = (Nodo *)malloc(sizeof(Nodo));
-    if (nuevo == NULL) return -1;
-
+    if (nuevo == NULL){
+        pthread_mutex_unlock(&cerrojo); // Liberar el cerrojo si falla malloc
+        return -1;
+    }
+    
     // copiar datos
     strncpy(nuevo->key, key, 255);
     nuevo->key[255] = '\0';
@@ -62,6 +72,7 @@ int set_value(char *key, char *value1, int N_value2, float *V_value2, struct Paq
     nuevo->siguiente = tabla[idx];
     tabla[idx] = nuevo;
 
+    pthread_mutex_unlock(&cerrojo); 
     return 0; // Éxito
 }
 
@@ -69,6 +80,7 @@ int set_value(char *key, char *value1, int N_value2, float *V_value2, struct Paq
 
 // función get_value: 
 int get_value(char *key, char *value1, int *N_value2, float *V_value2, struct Paquete *value3) {
+    pthread_mutex_lock(&cerrojo);
     // calcular índice hash
     unsigned int idx = funcion_hash(key);
 
@@ -87,12 +99,14 @@ int get_value(char *key, char *value1, int *N_value2, float *V_value2, struct Pa
             // Devolvemos la estructura Paquete 
             *value3 = actual->value3;
 
+            pthread_mutex_unlock(&cerrojo); 
             return 0; // Éxito 
         }
         actual = actual->siguiente;
     }
 
     // si llegamos aquí, la clave no existe 
+    pthread_mutex_unlock(&cerrojo);
     return -1; 
 }
 
@@ -102,6 +116,7 @@ int modify_value(char *key, char *value1, int N_value2, float *V_value2, struct 
     // validar N_value2
     if (N_value2 < 1 || N_value2 > 32) return -1;
 
+    pthread_mutex_lock(&cerrojo);
     // calcular índice hash
     unsigned int idx = funcion_hash(key);
 
@@ -117,10 +132,13 @@ int modify_value(char *key, char *value1, int N_value2, float *V_value2, struct 
             memcpy(actual->V_value2, V_value2, N_value2 * sizeof(float));
             actual->value3 = value3;
 
+            pthread_mutex_unlock(&cerrojo);
             return 0; // Éxito
         }
         actual = actual->siguiente;
     }
+
+    pthread_mutex_unlock(&cerrojo);
 
     // si llegamos aquí, la clave no existe
     return -1;
@@ -128,6 +146,7 @@ int modify_value(char *key, char *value1, int N_value2, float *V_value2, struct 
 
 // función delete_key:
 int delete_key(char *key) {
+    pthread_mutex_lock(&cerrojo);
     // calcular índice hash
     unsigned int idx = funcion_hash(key);
 
@@ -144,18 +163,21 @@ int delete_key(char *key) {
                 anterior->siguiente = actual->siguiente;
             }
             free(actual);
+            pthread_mutex_unlock(&cerrojo);
             return 0; // Éxito
         }
         anterior = actual;
         actual = actual->siguiente;
     }
 
+    pthread_mutex_unlock(&cerrojo);
     // si llegamos aquí, la clave no existe
     return -1;
 }
 
 // función exist:
 int exist(char *key) {
+    pthread_mutex_lock(&cerrojo);
     // calcular índice hash
     unsigned int idx = funcion_hash(key);
 
@@ -163,17 +185,20 @@ int exist(char *key) {
     Nodo *actual = tabla[idx];
     while (actual != NULL) {
         if (strcmp(actual->key, key) == 0) {
+            pthread_mutex_unlock(&cerrojo);
             return 1; // La clave existe
         }
         actual = actual->siguiente;
     }
 
+    pthread_mutex_unlock(&cerrojo);
     // si llegamos aquí, la clave no existe
     return 0;
 }
 
 // función destroy: 
 int destroy(void) {
+    pthread_mutex_lock(&cerrojo);
     for (int i = 0; i < MAX_HASH; i++) {
         Nodo *actual = tabla[i];
         while (actual != NULL) {
@@ -183,5 +208,6 @@ int destroy(void) {
         }
         tabla[i] = NULL; // Limpiar el puntero de la tabla
     }
+    pthread_mutex_unlock(&cerrojo);
     return 0; 
 }

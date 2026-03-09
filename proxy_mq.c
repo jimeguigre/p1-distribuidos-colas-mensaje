@@ -45,6 +45,14 @@ int set_value(char *key, char *value1, int N_value2, float *V_value2, struct Paq
     mq_close(q_cliente);
     mq_unlink(nombre_cola);
 
+    // para depuración, el cliente imprime mensajes en cada paso
+    printf("Cliente %d: Enviando petición...\n", getpid());
+    mq_send(q_servidor, (const char *)&pet, sizeof(pet), 0);
+
+    printf("Cliente %d: Esperando respuesta en %s...\n", getpid(), nombre_cola);
+    mq_receive(q_cliente, (char *)&res, sizeof(res), NULL);
+    printf("Cliente %d: ¡Respuesta recibida!\n", getpid());
+
     return res.resultado; // Devuelve el 0 o -1 que envió el servidor
 }
 

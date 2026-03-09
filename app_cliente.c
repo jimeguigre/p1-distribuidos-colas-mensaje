@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "claves.h"
 
 int main() {
@@ -16,6 +17,10 @@ int main() {
     int res_n2;
     struct Paquete res_v3;
 
+    // para las pruebas de concurrencia y para evitar colisiones entre clientes, cada cliente genera una clave única basada en su PID
+    char clave_unica[256];
+    sprintf(clave_unica, "clave_proceso_%d", getpid());
+
     printf("--- INICIANDO PLAN DE PRUEBAS ---\n");
 
     // inicializar el servicio
@@ -24,15 +29,15 @@ int main() {
     } 
 
     // probar set_value
-    if (set_value(key, v1, n2, v2, v3) == 0) {
-        printf("Inserción de '%s' correcta.\n", key);
+    if (set_value(clave_unica, v1, n2, v2, v3) == 0) {
+        printf("Cliente %d: Inserción de '%s' correcta.\n", getpid(), clave_unica);
     } else {
-        printf("Error al insertar '%s'.\n", key);
+        printf("Cliente %d: Error al insertar '%s'.\n", getpid(), clave_unica);
     }
 
     // probar exist
-    if (exist(key) == 1) {
-        printf("La clave '%s' existe en el sistema.\n", key);
+    if (exist(clave_unica) == 1) {
+        printf("La clave '%s' existe en el sistema.\n", clave_unica);
     }
 
     // probar get_value (recuperar datos)
