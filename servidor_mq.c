@@ -15,6 +15,8 @@ void tratar_peticion(void *data) {
     struct mensaje_respuesta res;
     mqd_t q_cli;
 
+    memset(&res, 0, sizeof(struct mensaje_respuesta));
+    
     // se ejecuta la operación solicitada 
     if (pet->operacion == 0) { // 0 es SET
         // se busca en pet los valores necesarios 
