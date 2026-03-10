@@ -17,43 +17,58 @@ int set_value(char *key, char *value1, int N_value2, float *V_value2, struct Paq
     struct mensaje_respuesta res;
     char nombre_cola[256];
 
-    // configurar cola de respuesta única para este cliente
-    sprintf(nombre_cola, "/cola_cliente_%d", getpid());
-    struct mq_attr attr = { .mq_maxmsg = 1, .mq_msgsize = sizeof(struct mensaje_respuesta) };
-    q_cliente = mq_open(nombre_cola, O_CREAT | O_RDONLY, 0666, &attr);
+    // 1. Nombre de cola único
+    sprintf(nombre_cola, "/q_cli_%d", getpid());
 
-    // preparar la petición
-    pet.operacion = 0; // Código para SET
-    strcpy(pet.q_cliente, nombre_cola);
+    // 2. Atributos: el servidor debe enviar un mensaje de tamaño mensaje_respuesta
+    struct mq_attr attr = { .mq_maxmsg = 1, .mq_msgsize = sizeof(struct mensaje_respuesta) };
+    
+    // Abrir/Crear cola del cliente
+    mq_unlink(nombre_cola); // Limpiar por si acaso quedó una de un crash previo
+    q_cliente = mq_open(nombre_cola, O_CREAT | O_RDONLY, 0666, &attr);
+    if (q_cliente == -1) {
+        perror("Error al crear cola cliente");
+        return -1;
+    }
+
+    // 3. Preparar petición
+    memset(&pet, 0, sizeof(pet)); // Limpiar estructura
+    pet.operacion = 0; 
+    strncpy(pet.q_cliente, nombre_cola, 255);
     strncpy(pet.key, key, 255);
     strncpy(pet.value1, value1, 255);
     pet.N_value2 = N_value2;
-    memcpy(pet.V_value2, V_value2, N_value2 * sizeof(float));
+    if (N_value2 > 0 && V_value2 != NULL)
+        memcpy(pet.V_value2, V_value2, N_value2 * sizeof(float));
     pet.value3 = value3;
 
-    // enviar al servidor
+    // 4. Enviar al servidor
     q_servidor = mq_open("/SERVIDOR", O_WRONLY);
-    if (q_servidor == -1) return -2; // Error de comunicaciones
+    if (q_servidor == -1) {
+        mq_close(q_cliente);
+        mq_unlink(nombre_cola);
+        return -2;
+    }
 
-    mq_send(q_servidor, (const char *)&pet, sizeof(pet), 0);
+    if (mq_send(q_servidor, (const char *)&pet, sizeof(pet), 0) == -1) {
+        perror("Error mq_send");
+        // Limpiar...
+        return -2;
+    }
 
-    // recibir respuesta (bloqueante)
-    mq_receive(q_cliente, (char *)&res, sizeof(res), NULL);
+    // 5. Recibir respuesta
+    if (mq_receive(q_cliente, (char *)&res, sizeof(res), NULL) == -1) {
+        perror("Error mq_receive");
+        // Limpiar...
+        return -2;
+    }
 
-    // limpieza
+    // 6. Limpieza ordenada
     mq_close(q_servidor);
     mq_close(q_cliente);
     mq_unlink(nombre_cola);
 
-    // para depuración, el cliente imprime mensajes en cada paso
-    printf("Cliente %d: Enviando petición...\n", getpid());
-    mq_send(q_servidor, (const char *)&pet, sizeof(pet), 0);
-
-    printf("Cliente %d: Esperando respuesta en %s...\n", getpid(), nombre_cola);
-    mq_receive(q_cliente, (char *)&res, sizeof(res), NULL);
-    printf("Cliente %d: ¡Respuesta recibida!\n", getpid());
-
-    return res.resultado; // Devuelve el 0 o -1 que envió el servidor
+    return res.resultado;
 }
 
 
