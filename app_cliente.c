@@ -6,7 +6,6 @@
 #include "claves.h"
 
 int main() {
-    char *key = "clave_prueba";
     char v1[256] = "valor inicial 1";
     float v2[] = {1.1, 2.2, 3.3};
     int n2 = 3;
@@ -28,46 +27,43 @@ int main() {
         printf("Servicio inicializado/destruido con éxito.\n");
     } 
 
-    // probar set_value
+
+    // 1. Probar set_value con la clave única
     if (set_value(clave_unica, v1, n2, v2, v3) == 0) {
         printf("Cliente %d: Inserción de '%s' correcta.\n", getpid(), clave_unica);
-    } else {
-        printf("Cliente %d: Error al insertar '%s'.\n", getpid(), clave_unica);
     }
 
-    // probar exist
+    // 2. Probar exist (USANDO CLAVE_UNICA)
     if (exist(clave_unica) == 1) {
         printf("La clave '%s' existe en el sistema.\n", clave_unica);
     }
 
-    // probar get_value (recuperar datos)
-    // el cliente reserva espacio (256 chars y 32 floats) 
-    if (get_value(key, res_v1, &res_n2, res_v2, &res_v3) == 0) {
+    // 3. Probar get_value (USANDO CLAVE_UNICA)
+    if (get_value(clave_unica, res_v1, &res_n2, res_v2, &res_v3) == 0) {
         printf("Datos recuperados: v1 = '%s', n2 = %d, v3 = {%d,%d,%d}\n", 
                 res_v1, res_n2, res_v3.x, res_v3.y, res_v3.z);
     }
 
-    // probar modify_value
+    // 4. Probar modify_value (USANDO CLAVE_UNICA)
     char *nuevo_v1 = "valor modificado";
     v3.x = 99;
-    if (modify_value(key, nuevo_v1, n2, v2, v3) == 0) {
-        printf("Modificación de '%s' correcta.\n", key);
+    if (modify_value(clave_unica, nuevo_v1, n2, v2, v3) == 0) {
+        printf("Modificación de '%s' correcta.\n", clave_unica);
     }
 
-    // verificar que los datos se han modificado
-    if (get_value(key, res_v1, &res_n2, res_v2, &res_v3) == 0) {
-        printf("Datos recuperados: v1 = '%s', n2 = %d, v3 = {%d,%d,%d}\n", 
-                res_v1, res_n2, res_v3.x, res_v3.y, res_v3.z);
+    // 5. Verificar modificación (USANDO CLAVE_UNICA)
+    if (get_value(clave_unica, res_v1, &res_n2, res_v2, &res_v3) == 0) {
+        printf("Datos recuperados tras modificar: v1 = '%s', v3.x = %d\n", res_v1, res_v3.x);
     }
 
-    // probar delete_key
-    if (delete_key(key) == 0) {
-        printf("Borrado de '%s' correcto.\n", key);
+    // 6. Probar delete_key (USANDO CLAVE_UNICA)
+    if (delete_key(clave_unica) == 0) {
+        printf("Borrado de '%s' correcto.\n", clave_unica);
     }
 
-    // verificar que ya no existe
-    if (exist(key) == 0) {
-        printf("Confirmado: la clave '%s' ya no existe.\n", key);
+    // 7. Verificar inexistencia (USANDO CLAVE_UNICA)
+    if (exist(clave_unica) == 0) {
+        printf("Confirmado: la clave '%s' ya no existe.\n", clave_unica);
     }
 
     printf("--- PRUEBAS FINALIZADAS ---\n");
