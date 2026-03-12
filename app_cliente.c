@@ -22,10 +22,10 @@ int main() {
 
     printf("--- INICIANDO PLAN DE PRUEBAS ---\n");
 
-    // inicializar el servicio
-    if (destroy() == 0) {
-        printf("Servicio inicializado/destruido con éxito.\n");
-    } 
+    // inicializar el servicio: COMENTADO PARA PROBAR CONCURRENCIA, ASUMIENDO QUE EL SERVIDOR YA ESTÁ EN EJECUCIÓN
+    //if (destroy() == 0) {
+        //printf("Servicio inicializado/destruido con éxito.\n");
+    //} 
 
 
     // 1. Probar set_value con la clave única

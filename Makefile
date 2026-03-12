@@ -1,9 +1,9 @@
 CC = gcc
 CFLAGS = -Wall -Werror -fPIC
 # LDFLAGS para cuando usamos la lógica real (servidor y cliente mono)
-LDFLAGS_LOGICA = -L. -lclaves -lpthread -lrt
+LDFLAGS_LOGICA = -L. -lclaves -lpthread -lrt -Wl,-rpath,.
 # LDFLAGS para cuando el cliente es distribuido (usa el proxy)
-LDFLAGS_PROXY = -L. -lproxyclaves -lrt
+LDFLAGS_PROXY = -L. -lproxyclaves -lrt -Wl,-rpath,.
 
 LD_LIBRARY_PATH_EXPORT = export LD_LIBRARY_PATH=.:$$LD_LIBRARY_PATH
 
@@ -41,6 +41,8 @@ app_cliente: app_cliente.o libproxyclaves.so
 
 app_cliente.o: app_cliente.c claves.h
 	$(CC) $(CFLAGS) -c app_cliente.c
+
+# AÑADIR LOS DEL LOS NUEVOS CLIENTES (app_cliente_duplicado...)
 
 # --- LIMPIEZA ---
 clean:
