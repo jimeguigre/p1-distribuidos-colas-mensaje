@@ -16,6 +16,9 @@ void tratar_peticion(void *data) {
     mqd_t q_cli;
 
     memset(&res, 0, sizeof(struct mensaje_respuesta));
+
+    // LOG PARA EL PROFESOR
+    printf("[SERVIDOR] Atendiendo petición %d para la clave: '%s'\n", pet->operacion, pet->key);
     
     // se ejecuta la operación solicitada 
     if (pet->operacion == 0) { // 0 es SET

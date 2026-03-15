@@ -25,6 +25,10 @@ int set_value(char *key, char *value1, int N_value2, float *V_value2, struct Paq
     struct mensaje_respuesta res;
     char nombre_cola[256];
 
+    if (N_value2 < 1 || N_value2 > 32 || strlen(value1) > 255) {
+        return -1; // Rechazo local sin contactar al servidor
+    }
+
     if (abrir_cola_respuesta(nombre_cola, &q_cliente) == -1) return -1;
 
     memset(&pet, 0, sizeof(struct mensaje_peticion));
@@ -98,6 +102,11 @@ int modify_value(char *key, char *value1, int N_value2, float *V_value2, struct 
     struct mensaje_respuesta res;
     char nombre_cola[256];
 
+
+    if (N_value2 < 1 || N_value2 > 32 || strlen(value1) > 255) {
+        return -1; // Rechazo local sin contactar al servidor
+    }
+    
     if (abrir_cola_respuesta(nombre_cola, &q_cliente) == -1) return -1;
 
     memset(&pet, 0, sizeof(struct mensaje_peticion));
