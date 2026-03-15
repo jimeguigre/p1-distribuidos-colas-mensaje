@@ -9,7 +9,7 @@ killall servidor_mq 2>/dev/null
 SERV_PID=$!
 sleep 1
 
-echo "--- INICIANDO PRUEBA DE CARGA (500 OPERACIONES) ---"
+echo "--- INICIANDO PRUEBA DE CARGA ---"
 
 # Lanzar 10 clientes en paralelo
 for i in {1..100}

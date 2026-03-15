@@ -22,10 +22,10 @@ int main() {
     for (int i = 0; i < 50; i++) {
         sprintf(key, "multi_%d_%d", getpid(), i);
         
-        // 1. Insertar
+        // Insertar
         set_value(key, "data", 1, v2, p);
         
-        // 2. Comprobar inmediatamente que existe y es correcto
+        // Comprobar inmediatamente que existe y es correcto
         if (get_value(key, v1_res, &n2, v2, &p) != 0) {
             printf("[ERROR] ¡Memoria corrompida en iteración %d!\n", i);
             exit(-1);
@@ -36,7 +36,7 @@ int main() {
     // Calcular tiempo en segundos
     tiempo_total = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
 
-    printf("\n--- ESTADÍSTICAS DE RENDIMIENTO ---\n");
+    printf("\n ESTADÍSTICAS DE RENDIMIENTO \n");
     printf("Tiempo total: %.4f segundos\n", tiempo_total);
     printf("Operaciones por segundo (Throughput): %.2f ops/sec\n", 500 / tiempo_total);
     printf("Latencia media: %.4f ms/op\n", (tiempo_total / 500) * 1000);
